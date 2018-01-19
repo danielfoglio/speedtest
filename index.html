@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no, user-scalable=no" />
-<title>HTML5 Speedtest</title>
+<title>NMCI Speedtest</title>
 <style type="text/css">
 	html,body{
 		border:none; padding:0; margin:0;
@@ -122,7 +122,7 @@ function startStop(){
 	}else{
 		//test is not running, begin
 		w=new Worker('speedtest_worker.min.js');
-		w.postMessage('start'); //Add optional parameters as a JSON object to this command
+		w.postMessage('start {"telemetry_level":"basic"}'); //Add optional parameters as a JSON object to this command
 		I("startStopBtn").className="running";
 		w.onmessage=function(e){
 			var data=e.data.split(';');
@@ -156,7 +156,7 @@ function initUI(){
 </script>
 </head>
 <body>
-<h1>HTML5 Speedtest</h1>
+<h1>NMCI Speedtest</h1>
 <div id="startStopBtn" onclick="startStop()"></div>
 <div id="test">
 	<div class="testGroup">
@@ -187,7 +187,6 @@ function initUI(){
 		IP Address: <span id="ip"></span>
 	</div>
 </div>
-<a href="https://github.com/adolfintel/speedtest">Source code</a>
 <script type="text/javascript">initUI();</script>
 </body>
 </html>
