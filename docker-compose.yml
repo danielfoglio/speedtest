@@ -5,14 +5,15 @@ services:
     build: .
     image: adolfintel/speedtest:${TAG:-latest}
     ports:
-      - "8888:80"
+      - 8888:80
     volumes:
       - .:/var/www/html
+    depends_on:
+      - sqlsrv
   sqlsrv:
-    build:
     image: microsoft/mssql-server-linux
     ports:
-      - "1433:1433"
+      - 1433:1433
     environment:
       - HOMEBREW_NO_ENV_FILTERING=1
       - ACCEPT_EULA=Y
