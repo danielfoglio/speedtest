@@ -18,7 +18,7 @@ $conn->exec("
     if not exists (select * from sys.tables t where t.name = '$SqlServer_databasename')
         create table $SqlServer_databasename (
             id            int IDENTITY(1,1) PRIMARY KEY,
-            timestamp     ,
+            timestamp     DATETIME NOT NULL CONSTRAINT timestamp_DF DEFAULT CURRENT_TIMESTAMP,
             ip            text NOT NULL,
             ua            text NOT NULL,
             lang          text NOT NULL,
