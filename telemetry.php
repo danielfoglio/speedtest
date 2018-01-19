@@ -1,4 +1,5 @@
 <?php
+
 include_once('telemetry_settings.php');
 
 $ip=($_SERVER['REMOTE_ADDR']);
@@ -10,67 +11,27 @@ $ping=($_POST["ping"]);
 $jitter=($_POST["jitter"]);
 $log=($_POST["log"]);
 
-if($db_type=="mysql"){
-    $conn = new mysqli($MySql_hostname, $MySql_username, $MySql_password, $MySql_databasename) or die("1");
-    $stmt = $conn->prepare("INSERT INTO speedtest_users (ip,ua,lang,dl,ul,ping,jitter,log) VALUES (?,?,?,?,?,?,?,?)") or die("2");
-    $stmt->bind_param("ssssssss",$ip,$ua,$lang,$dl,$ul,$ping,$jitter,$log) or die("3");
-    $stmt->execute() or die("4");
-    $stmt->close() or die("5");
-    $conn->close() or die("6");
 
-}elseif($db_type=="sqlite"){
-    $conn = new PDO("sqlite:$Sqlite_db_file") or die("1");
-    $conn->exec("
-        CREATE TABLE IF NOT EXISTS `speedtest_users` (
-        `id`    INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
-        `timestamp`     timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
-        `ip`    text NOT NULL,
-        `ua`    text NOT NULL,
-        `lang`  text NOT NULL,
-        `dl`    text,
-        `ul`    text,
-        `ping`  text,
-        `jitter`        text,
-        `log`   longtext
+$odbc="sqlsrv:Server=$SqlServer_hostname;";
+$conn = new PDO($odbc, $SqlServer_username, $SqlServer_password) or die("1");
+$conn->exec("
+    if not exists (select * from sys.tables t where t.name = '$SqlServer_databasename')
+        create table $SqlServer_databasename (
+            id            int IDENTITY(1,1) PRIMARY KEY,
+            timestamp     ,
+            ip            text NOT NULL,
+            ua            text NOT NULL,
+            lang          text NOT NULL,
+            dl            text,
+            ul            text,
+            ping          text,
+            jitter        text,
+            log           text
         );
-    ");
-    $stmt = $conn->prepare("INSERT INTO speedtest_users (ip,ua,lang,dl,ul,ping,jitter,log) VALUES (?,?,?,?,?,?,?,?)") or die("2");
-    $stmt->execute(array($ip,$ua,$lang,$dl,$ul,$ping,$jitter,$log)) or die("3");
-    $conn = null;
-}elseif($db_type=="postgresql"){
-    // Prepare connection parameters for db connection
-    $conn_host = "host=$PostgreSql_hostname";
-    $conn_db = "dbname=$PostgreSql_databasename";
-    $conn_user = "user=$PostgreSql_username";
-    $conn_password = "password=$PostgreSql_password";
-    // Create db connection
-    $conn = new PDO("pgsql:$conn_host;$conn_db;$conn_user;$conn_password") or die("1");
-    $stmt = $conn->prepare("INSERT INTO speedtest_users (ip,ua,lang,dl,ul,ping,jitter,log) VALUES (?,?,?,?,?,?,?,?)") or die("2");
-    $stmt->execute(array($ip,$ua,$lang,$dl,$ul,$ping,$jitter,$log)) or die("3");
-    $conn = null;
-}elseif($db_type=="sqlserver"){
-    // Prepare connection parameters for db connection and
-    // Create db connection
-    $odbc="sqlsrv:Server=$SqlServer_hostname;";
-    $conn = new PDO($odbc, $SqlServer_username, $SqlServer_password) or die("1");
-    $conn->exec("
-        if not exists (select * from sys.tables t where t.name = '$SqlServer_databasename')
-            create table $SqlServer_databasename (
-                id            int IDENTITY(1,1) PRIMARY KEY,
-                timestamp     ,
-                ip            text NOT NULL,
-                ua            text NOT NULL,
-                lang          text NOT NULL,
-                dl            text,
-                ul            text,
-                ping          text,
-                jitter        text,
-                log           text
-            );
 
-    ");
-    $stmt = $conn->prepare("INSERT INTO $SqlServer_databasename (ip,ua,lang,dl,ul,ping,jitter,log) VALUES (?,?,?,?,?,?,?,?)") or die("2");
-    $stmt->execute(array($ip,$ua,$lang,$dl,$ul,$ping,$jitter,$log)) or die("3");
-    $conn = null;
-}
+");
+$stmt = $conn->prepare("INSERT INTO $SqlServer_databasename (ip,ua,lang,dl,ul,ping,jitter,log) VALUES (?,?,?,?,?,?,?,?)") or die("2");
+$stmt->execute(array($ip,$ua,$lang,$dl,$ul,$ping,$jitter,$log)) or die("3");
+$conn = null;
+
 ?>
