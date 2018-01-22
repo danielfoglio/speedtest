@@ -10,7 +10,7 @@ $ul=($_POST["ul"]);
 $ping=($_POST["ping"]);
 $jitter=($_POST["jitter"]);
 $log=($_POST["log"]);
-
+$host=($_SERVER['SERVER_ADDR']);
 
 $odbc="sqlsrv:Server=$SqlServer_hostname;";
 $conn = new PDO($odbc, $SqlServer_username, $SqlServer_password) or die("1");
@@ -26,12 +26,13 @@ $conn->exec("
             ul            text,
             ping          text,
             jitter        text,
-            log           text
+            log           text,
+            host        text
         );
 
 ");
-$stmt = $conn->prepare("INSERT INTO $SqlServer_databasename (ip,ua,lang,dl,ul,ping,jitter,log) VALUES (?,?,?,?,?,?,?,?)") or die("2");
-$stmt->execute(array($ip,$ua,$lang,$dl,$ul,$ping,$jitter,$log)) or die("3");
+$stmt = $conn->prepare("INSERT INTO $SqlServer_databasename (ip,ua,lang,dl,ul,ping,jitter,log,host) VALUES (?,?,?,?,?,?,?,?,?)") or die("2");
+$stmt->execute(array($ip,$ua,$lang,$dl,$ul,$ping,$jitter,$log,$host)) or die("3");
 $conn = null;
 
 ?>
