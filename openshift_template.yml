@@ -43,17 +43,21 @@ objects:
         containers:
           - name: "speedtest-container"
             image: "speedtest"
-        env:
-          env:
+            env:
             - name: "MYSQL_USERNAME"
-              value: ${MYSQL_USERNAME}
+              valueFrom:
+                secretKeyRef:
+                  name: "${SPEEDTEST_SERVICE_NAME}"
+                  key: database-user
             - name: "MYSQL_PASSWORD"
-              value: ${MYSQL_PASSWORD}
+              valueFrom:
+                secretKeyRef:
+                  name: "${SPEEDTEST_SERVICE_NAME}"
+                  key: database-password
             - name: "MYSQL_SERVICE_NAME"
               value: ${MYSQL_SERVICE_NAME}
             - name: "MYSQL_DATABASE_NAME"
               value: ${MYSQL_DATABASE_NAME}
-
     replicas: 1
     triggers:
       - type: "ConfigChange"
@@ -80,7 +84,7 @@ objects:
     ports:
       - name: "http-interface"
         port: 80
-        targetPort: 5000
+        targetPort: 80
     selector:
       name: ${SPEEDTEST_SERVICE_NAME}
 - kind: "Route"
@@ -91,10 +95,21 @@ objects:
     to:
       kind: "Service"
       name: "speedtest"
+
+- kind: Secret
+  apiVersion: v1
+  metadata:
+    name: "${SPEEDTEST_SERVICE_NAME}"
+    annotations:
+      template.openshift.io/expose-username: "{.data['database-user']}"
+      template.openshift.io/expose-password: "{.data['database-password']}"
+  stringData:
+    database-user: "${MYSQL_USERNAME}"
+    database-password: "${MYSQL_USERNAME}"
 parameters:
 - name: "SPEEDTEST_GIT_URL"
   description: "The URL of the repository with your application source code"
-  value: "http://192.168.99.1/mikes/speedtest.git"
+  value: ""
   required: true
 - name: "SPEEDTEST_SERVICE_NAME"
   description: "The number of GB to allocate to elasticsearch"
@@ -104,11 +119,11 @@ parameters:
   description: "Username for mysql database"
   value: ""
   required: true
-- name: "MYSQL_PASSWORD"
+- name: "MYSQL_USERNAME"
   description: "password for the mysql database user"
   value: ""
   required: true
-- name: "MYSQL_SERVICE_NAME"
+- name: "MYSQL_USERNAME"
   description: "The mysql service name"
   value: "mysql"
   required: true
