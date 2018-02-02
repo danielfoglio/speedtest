@@ -33,7 +33,7 @@ objects:
 - kind: "DeploymentConfig"
   apiVersion: "v1"
   metadata:
-    name: "speedtest"
+    name: "${SPEEDTEST_SERVICE_NAME}"
   spec:
     template:
       metadata:
@@ -58,6 +58,13 @@ objects:
               value: ${MYSQL_SERVICE_NAME}
             - name: "MYSQL_DATABASE_NAME"
               value: ${MYSQL_DATABASE_NAME}
+            resources:
+              limits:
+                cpu: '1'
+                memory: 500M
+              requests:
+                cpu: 500m
+                memory: 100M
     replicas: 1
     triggers:
       - type: "ConfigChange"
@@ -87,6 +94,20 @@ objects:
         targetPort: 80
     selector:
       name: ${SPEEDTEST_SERVICE_NAME}
+- kind: HorizontalPodAutoscaler
+  apiVersion: extensions/v1beta1
+  metadata:
+    name: frontend
+  spec:
+    scaleRef:
+      kind: DeploymentConfig
+      name: ${SPEEDTEST_SERVICE_NAME}
+      apiVersion: v1
+      subresource: scale
+    minReplicas: 1
+    maxReplicas: 5
+    cpuUtilization:
+      targetPercentage: 80
 - kind: "Route"
   apiVersion: "v1"
   metadata:
@@ -109,7 +130,7 @@ objects:
 parameters:
 - name: "SPEEDTEST_GIT_URL"
   description: "The URL of the repository with your application source code"
-  value: ""
+  value: "http://192.168.99.1/mikes/speedtest.git"
   required: true
 - name: "SPEEDTEST_SERVICE_NAME"
   description: "The number of GB to allocate to elasticsearch"
