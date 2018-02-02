@@ -1,0 +1,118 @@
+kind: Template
+apiVersion: v1
+metadata:
+  name: "speedtest-template"
+objects:
+- kind: "BuildConfig"
+  apiVersion: "v1"
+  metadata:
+    name: "speedtest"
+  spec:
+    env:
+      - name: "GIT_SSL_NO_VERIFY"
+        value: "true"
+    source:
+      type: "Git"
+      git:
+        uri : "${SPEEDTEST_GIT_URL}"
+    strategy:
+      type: "Docker"
+      dockerStrategy:
+        env:
+          - name: GIT_SSL_NO_VERIFY
+            value: 'true'
+    output:
+      to:
+        kind: "ImageStreamTag"
+        name: "speedtest:latest"
+- kind: "ImageStream"
+  apiVersion: "v1"
+  metadata:
+    name: speedtest
+
+- kind: "DeploymentConfig"
+  apiVersion: "v1"
+  metadata:
+    name: "speedtest"
+  spec:
+    template:
+      metadata:
+        labels:
+          name: "speedtest"
+      spec:
+        containers:
+          - name: "speedtest-container"
+            image: "speedtest"
+        env:
+          env:
+            - name: "MYSQL_USERNAME"
+              value: ${MYSQL_USERNAME}
+            - name: "MYSQL_PASSWORD"
+              value: ${MYSQL_PASSWORD}
+            - name: "MYSQL_SERVICE_NAME"
+              value: ${MYSQL_SERVICE_NAME}
+            - name: "MYSQL_DATABASE_NAME"
+              value: ${MYSQL_DATABASE_NAME}
+
+    replicas: 1
+    triggers:
+      - type: "ConfigChange"
+      - type: "ImageChange"
+        imageChangeParams:
+          automatic: true
+          containerNames:
+            - "speedtest-container"
+          from:
+            kind: "ImageStreamTag"
+            name: "speedtest:latest"
+    strategy:
+      type: "Rolling"
+    paused: false
+    revisionHistoryLimit: 2
+    minReadySeconds: 0
+- kind: "Service"
+  apiVersion: "v1"
+  metadata:
+    name: ${SPEEDTEST_SERVICE_NAME}
+    annotations:
+      description: "Exposes and load balances the application pods"
+  spec:
+    ports:
+      - name: "http-interface"
+        port: 80
+        targetPort: 5000
+    selector:
+      name: ${SPEEDTEST_SERVICE_NAME}
+- kind: "Route"
+  apiVersion: "v1"
+  metadata:
+    name: "speedtest"
+  spec:
+    to:
+      kind: "Service"
+      name: "speedtest"
+parameters:
+- name: "SPEEDTEST_GIT_URL"
+  description: "The URL of the repository with your application source code"
+  value: "http://192.168.99.1/mikes/speedtest.git"
+  required: true
+- name: "SPEEDTEST_SERVICE_NAME"
+  description: "The number of GB to allocate to elasticsearch"
+  value: "speedtest"
+  required: true
+- name: "MYSQL_USERNAME"
+  description: "Username for mysql database"
+  value: ""
+  required: true
+- name: "MYSQL_PASSWORD"
+  description: "password for the mysql database user"
+  value: ""
+  required: true
+- name: "MYSQL_SERVICE_NAME"
+  description: "The mysql service name"
+  value: "mysql"
+  required: true
+- name: "MYSQL_DATABASE_NAME"
+  description: "The mysql database name"
+  value: "speedtest"
+  required: true
