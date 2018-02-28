@@ -7,6 +7,12 @@
         $ip=$_SERVER['X-Real-IP'];
     } elseif (!empty($_SERVER['HTTP_X_FORWARDED_FOR'])) {
         $ip=$_SERVER['HTTP_X_FORWARDED_FOR'];
+    } elseif (!empty($_SERVER['HTTP_X_FORWARDED'])) {
+        $ip=$_SERVER['HTTP_X_FORWARDED'];
+    } elseif (!empty($_SERVER['HTTP_FORWARDED_FOR'])) {
+        $ip=$_SERVER['HTTP_FORWARDED_FOR'];
+    } elseif (!empty($_SERVER['HTTP_FORWARDED'])) {
+        $ip=$_SERVER['HTTP_FORWARDED'];
     } else {
         $ip=$_SERVER['REMOTE_ADDR'];
     }

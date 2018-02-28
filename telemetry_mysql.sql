@@ -38,7 +38,8 @@ CREATE TABLE `speedtest_users` (
   `ul` text,
   `ping` text,
   `jitter` text,
-  `log` longtext
+  `log` longtext,
+  `localIp` text
 ) ENGINE=InnoDB DEFAULT CHARSET=latin1;
 
 --

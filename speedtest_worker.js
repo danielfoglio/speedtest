@@ -22,6 +22,7 @@ function twarn(s){log+=Date.now()+' WARN: '+s+'\n'; console.warn(s)}
 
 // test settings. can be overridden by sending specific values with the start command
 var settings = {
+  local_ip: '0.0.0.0',
   test_order: "IP_D_U", //order in which tests will be performed as a string. D=Download, U=Upload, P=Ping+Jitter, I=IP, _=1 second delay
   time_ul: 15, // duration of upload test in seconds
   time_dl: 15, // duration of download test in seconds
@@ -442,6 +443,7 @@ function pingTest (done) {
   }.bind(this)
   doPing() // start first ping
 }
+
 // telemetry
 function sendTelemetry(){
   if (settings.telemetry_level < 1) return
@@ -456,9 +458,11 @@ function sendTelemetry(){
     fd.append('ping', pingStatus)
     fd.append('jitter', jitterStatus)
     fd.append('log', settings.telemetry_level>1?log:"")
+    fd.append('localIp', settings.local_ip)
+    fd.append('publicIp', clientIp)
     xhr.send(fd)
   }catch(ex){
-    var postData = 'dl='+encodeURIComponent(dlStatus)+'&ul='+encodeURIComponent(ulStatus)+'&ping='+encodeURIComponent(pingStatus)+'&jitter='+encodeURIComponent(jitterStatus)+'&log='+encodeURIComponent(settings.telemetry_level>1?log:'')
+    var postData = 'publicIp='+encodeURIComponent(clientIp)+'localIp='+encodeURIComponent(localIp)+'&dl='+encodeURIComponent(dlStatus)+'&ul='+encodeURIComponent(ulStatus)+'&ping='+encodeURIComponent(pingStatus)+'&jitter='+encodeURIComponent(jitterStatus)+'&log='+encodeURIComponent(settings.telemetry_level>1?log:'')
     xhr.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded')
     xhr.send(postData)
   }
