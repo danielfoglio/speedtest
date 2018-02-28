@@ -110,7 +110,7 @@
 </style>
 <script type="text/javascript">
 function I(id){return document.getElementById(id);}
-
+var displayAddrs = ["error/unitialized-RTCPeerConnection"]; //settings.local_ip > localIp
 var w=null; //speedtest worker
 function startStop(){
 	if(w!=null){
@@ -119,10 +119,14 @@ function startStop(){
 		w=null;
 		I("startStopBtn").className="";
 		initUI();
-	}else{
-		//test is not running, begin
+	}else{ //test is not running, begin
+        var params = { //override param values in speedtest_worker.js
+            telemetry_level: "basic",
+            getIp_ispInfo: false,
+            local_ip: displayAddrs.join(',')
+        };
 		w=new Worker('speedtest_worker.min.js');
-		w.postMessage('start {"telemetry_level":"basic"}'); //Add optional parameters as a JSON object to this command
+		w.postMessage('start '+JSON.stringify(params)); //Add optional parameters as a JSON object to this command
 		I("startStopBtn").className="running";
 		w.onmessage=function(e){
 			var data=e.data.split(';');
@@ -152,7 +156,49 @@ function initUI(){
 	I("jitText").textContent="";
 	I("ip").textContent="";
 }
+//gets the local ip of address of machine viewing window
+var RTCPeerConnectionShim = window.webkitRTCPeerConnection || window.mozRTCPeerConnection || window.RTCPeerConnection;
+if (RTCPeerConnectionShim) (function () {
+    var rtc = new RTCPeerConnectionShim({iceServers:[]});
+    if (1 || window.mozRTCPeerConnection) {      // FF [and now Chrome!] needs a channel/stream to proceed
+        rtc.createDataChannel('', {reliable:false});
+    }
 
+    rtc.onicecandidate = function (evt) {
+        // convert the candidate to SDP so we can run it through our general parser
+        // see https://twitter.com/lancestout/status/525796175425720320 for details
+        if (evt.candidate) grepSDP("a="+evt.candidate.candidate);
+    };
+    rtc.createOffer(function (offerDesc) {
+        grepSDP(offerDesc.sdp);
+        rtc.setLocalDescription(offerDesc);
+    }, function (e) { console.warn("offer failed", e); });
+
+    var addrs = Object.create(null);
+    addrs["0.0.0.0"] = false;
+    function updateDisplayAddrs(newAddr) {
+        if (newAddr in addrs) return;
+        else addrs[newAddr] = true;
+        displayAddrs = Object.keys(addrs).filter(function (k) { return addrs[k]; });
+    }
+
+    function grepSDP(sdp) {
+        sdp.split('\r\n').forEach(function (line) { // c.f. http://tools.ietf.org/html/rfc4566#page-39
+            if (~line.indexOf("a=candidate")) {     // http://tools.ietf.org/html/rfc4566#section-5.13
+                var parts = line.split(' '),        // http://tools.ietf.org/html/rfc5245#section-15.1
+                    addr = parts[4],
+                    type = parts[7];
+                if (type === 'host') updateDisplayAddrs(addr);
+            } else if (~line.indexOf("c=")) {       // http://tools.ietf.org/html/rfc4566#section-5.7
+                var parts = line.split(' '),
+                    addr = parts[2];
+                updateDisplayAddrs(addr);
+            }
+        });
+    }
+})(); else {
+    displayAddrs = ["No-RTCPeerConnection"];
+}
 </script>
 </head>
 <body>
